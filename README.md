@@ -19,19 +19,21 @@ An automated system for generating and updating custom chatter files for the EDC
 
 2. **Install dependencies**
    ```bash
-   pip install -r requirements.txt
+   py -m pip install -r requirements.txt
    ```
 
 3. **Configure environment**
    ```bash
-   cp .env.example .env
+   copy env.example .env
    # Edit .env with your API keys and settings
    ```
 
 4. **Run the updater**
    ```bash
-   python src/main.py
+   py src/main.py
    ```
+
+**Note**: This project uses `py` to execute Python on Windows systems. If you're using a different operating system, replace `py` with `python` or `python3` as appropriate.
 
 ## Configuration
 
@@ -104,27 +106,33 @@ Create a `personalization.md` file to provide context for content generation:
 - Humor style and tone preferences
 ```
 
+## Creating Custom Prompt Templates
+
+The system uses template files in the `prompts/` directory to generate content. You can create and customize these templates to control the style and content of generated conversations.
+
+**📖 For detailed template documentation, see [`prompts/README.md`](prompts/README.md)**
+
 ## Usage
 
 ### Basic Usage
 
 Generate content for all chatter types:
 ```bash
-python src/main.py
+py src/main.py
 ```
 
 ### Test Mode
 
 Validate setup without generating content:
 ```bash
-python src/main.py --test
+py src/main.py --test
 ```
 
 ### Debug Mode
 
 Output generated content to the shell:
 ```bash
-python src/main.py --debug
+py src/main.py --debug
 ```
 
 ### Specific File Generation
@@ -132,13 +140,13 @@ python src/main.py --debug
 Generate content for specific chatter types:
 ```bash
 # Generate for one file type
-python src/main.py --files chit_chat --debug
+py src/main.py --files chit_chat --debug
 
 # Generate for multiple file types
-python src/main.py --files space_chatter crew_chatter --debug
+py src/main.py --files space_chatter crew_chatter --debug
 
 # Adjust the number of entries (default: 5)
-python src/main.py --files deep_space_chatter --max-entries 10 --debug
+py src/main.py --files deep_space_chatter --max-entries 10 --debug
 ```
 
 ### Personalization Control
@@ -146,13 +154,13 @@ python src/main.py --files deep_space_chatter --max-entries 10 --debug
 Disable personalization features:
 ```bash
 # Disable all personalization
-python src/main.py --no-personalization
+py src/main.py --no-personalization
 
 # Disable RSS feeds only
-python src/main.py --no-rss
+py src/main.py --no-rss
 
 # Disable web content only
-python src/main.py --no-web
+py src/main.py --no-web
 ```
 
 ### Content Management
@@ -160,7 +168,7 @@ python src/main.py --no-web
 Control content replacement:
 ```bash
 # Keep existing content and merge with new content (default: replace entirely)
-python src/main.py --keep-existing
+py src/main.py --keep-existing
 ```
 
 ## Command Line Options
@@ -177,6 +185,7 @@ python src/main.py --keep-existing
 | `--no-web` | Disable web content fetching |
 | `--clear-cache` | Clear RSS cache before running |
 | `--cache-info` | Show RSS cache information and exit |
+| `--prompt-only` | enable's debug mode & outputs the prompts that would have been sent to the LLM for review placing them in the output directory |
 
 ### Available File Types
 
@@ -189,31 +198,31 @@ python src/main.py --keep-existing
 
 ### Generate 3 entries for chit chat with debug output:
 ```bash
-python src/main.py --files chit_chat --debug --max-entries 3
+py src/main.py --files chit_chat --debug --max-entries 3
 ```
 
 ### Generate content using configuration default (30 entries):
 ```bash
-python src/main.py --files chit_chat
+py src/main.py --files chit_chat
 ```
 
 ### Generate content for space and crew chatter without personalization:
 ```bash
-python src/main.py --files space_chatter crew_chatter --no-personalization
+py src/main.py --files space_chatter crew_chatter --no-personalization
 ```
 
 ### Generate 10 entries for all files with debug mode:
 ```bash
-python src/main.py --debug --max-entries 10
+py src/main.py --debug --max-entries 10
 ```
 
 ### RSS Cache Management:
 ```bash
 # Show cache information
-python src/main.py --cache-info
+py src/main.py --cache-info
 
 # Clear cache and run
-python src/main.py --clear-cache --files chit_chat
+py src/main.py --clear-cache --files chit_chat
 ```
 
 ## Project Structure
@@ -233,6 +242,10 @@ ConversationRefresher/
 │       ├── api_client.py      # API client for OpenAI/Anthropic
 │       ├── file_manager.py    # File operations and backups
 │       └── personalization.py # Personalization context management
+├── prompts/                   # Prompt template files
+│   ├── README.md             # Template documentation
+│   ├── sample.prompt.md      # Example template
+│   └── prompt_*.md           # Chatter type templates
 ├── scheduler.py               # Windows Task Scheduler integration
 ├── run_updater.bat           # Simple batch script
 ├── run_updater.ps1           # PowerShell script
@@ -287,7 +300,7 @@ Check the `logs/` directory for detailed execution logs. Log files are timestamp
 Run the test script to validate your setup:
 
 ```bash
-python test_setup.py
+py test_setup.py
 ```
 
 ## Contributing
@@ -301,3 +314,11 @@ python test_setup.py
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Technical Constraints
+
+### Platform Requirements
+- **Operating System**: Windows 10/11 with PowerShell
+- **Python Version**: Python 3.8 or higher
+- **Python Execution**: Uses `py` command on Windows systems
+- **API Dependencies**: OpenAI API, Anthropic Claude API access
