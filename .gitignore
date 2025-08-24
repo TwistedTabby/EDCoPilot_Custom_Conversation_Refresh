@@ -180,3 +180,6 @@ Temporary Items
 .directory
 .Trash-*
 .nfs*
+
+# Prompt templates
+prompts/prompt*
