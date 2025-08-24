@@ -69,6 +69,11 @@ class BaseGenerator(ABC):
                 debug_prompt = self._create_debug_prompt(personalization_context, base_prompt)
                 logger.info(f"🐛 ENHANCED PROMPT FOR {self.chatter_type.upper()}:")
                 logger.info(f"🐛 {debug_prompt}")
+                logger.info(f"🐛 FULL PERSONALIZATION CONTEXT LENGTH: {len(personalization_context)} characters")
+                logger.info(f"🐛 FULL ENHANCED PROMPT LENGTH: {len(final_prompt)} characters")
+                logger.info(f"🐛 PERSONALIZATION SECTIONS FOUND: {list(self.api_client.personalization_manager.context_data.keys())}")
+                # Uncomment the next line to see the full personalization context in debug logs
+                # logger.info(f"🐛 FULL PERSONALIZATION CONTEXT: {personalization_context}")
             else:
                 logger.info(f"🐛 BASIC PROMPT FOR {self.chatter_type.upper()}:")
                 logger.info(f"🐛 {base_prompt}")
@@ -162,7 +167,7 @@ class BaseGenerator(ABC):
         clean_lines = []
         
         # Keep the header and personal data sections
-        keep_sections = ['## Personal Context:', '### Specific Data:', '### Quick Notes:']
+        keep_sections = ['## Personal Context:', '### Data:', '### Conversation Styles:']
         skip_sections = ['## Recent News and Updates:', '### From', '## Web Content References:']
         
         in_keep_section = False
