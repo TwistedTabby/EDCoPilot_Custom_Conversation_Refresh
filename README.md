@@ -186,6 +186,7 @@ py src/main.py --keep-existing
 | `--clear-cache` | Clear RSS cache before running |
 | `--cache-info` | Show RSS cache information and exit |
 | `--prompt-only` | enable's debug mode & outputs the prompts that would have been sent to the LLM for review placing them in the output directory |
+| `--generate-prompt-template` | Generate specific prompt files for each chatter type in the prompts directory (enables debug mode) |
 
 ### Available File Types
 
@@ -223,6 +224,18 @@ py src/main.py --cache-info
 
 # Clear cache and run
 py src/main.py --clear-cache --files chit_chat
+```
+
+### Prompt Template Generation:
+```bash
+# Generate specific prompt files for each chatter type
+py src/main.py --generate-prompt-template
+
+# Generate prompt files for specific chatter types only
+py src/main.py --generate-prompt-template --files chit_chat crew_chatter
+
+# Generate prompt file for one chatter type
+py src/main.py --generate-prompt-template --files space_chatter
 ```
 
 ## Project Structure

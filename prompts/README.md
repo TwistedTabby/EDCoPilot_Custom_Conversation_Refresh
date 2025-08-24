@@ -2,6 +2,22 @@
 
 This directory contains template files for generating conversation content for different EDCopilot chatter types. These templates use variables that will be automatically replaced with actual values during content generation.
 
+## Quick Start
+
+Generate specific prompt files for each chatter type to get started quickly:
+```bash
+# Generate all prompt files
+py src/main.py --generate-prompt-template
+
+# Generate prompt files for specific chatter types only
+py src/main.py --generate-prompt-template --files chit_chat crew_chatter
+
+# Generate prompt file for one chatter type
+py src/main.py --generate-prompt-template --files space_chatter
+```
+
+This will create individual prompt files for the specified chatter types (or all types if none specified) with all the available template variables and examples specific to each type.
+
 ## Usage
 
 ### Required Prompt Files
