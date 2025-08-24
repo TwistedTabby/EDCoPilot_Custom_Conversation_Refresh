@@ -10,7 +10,7 @@
 
 ## RSS Feeds
 
-- https://www.elitedangerous.com/en-GB/rss/galnet.xml
+- [number of articles] https://www.elitedangerous.com/en-GB/rss/galnet.xml
 
 ## Conversation Styles
 
