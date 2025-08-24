@@ -109,20 +109,30 @@ class EDCopilotUpdater:
 
     def run(self, merge_existing: bool = False, include_personalization: bool = True,
             include_rss: bool = True, include_web: bool = True, debug_mode: bool = False,
-            specific_files: Optional[list] = None, max_entries: int = 5) -> bool:
+            specific_files: Optional[list] = None, max_entries: int = 5, prompt_only: bool = False) -> bool:
         """Run the EDCopilot updater"""
-        print(f"{Fore.BLUE}🚀 Starting EDCopilot Conversation Refresher{Style.RESET_ALL}")
+        if prompt_only:
+            print(f"{Fore.BLUE}🚀 Starting EDCopilot Prompt Generator{Style.RESET_ALL}")
+        else:
+            print(f"{Fore.BLUE}🚀 Starting EDCopilot Conversation Refresher{Style.RESET_ALL}")
         
         if not self.validate_setup():
             return False
         
-        if specific_files:
-            results = self.generate_specific_content(specific_files, max_entries, 
-                                                   merge_existing, include_personalization,
-                                                   include_rss, include_web, debug_mode)
+        if prompt_only:
+            if specific_files:
+                results = self.generate_prompts_only(specific_files, max_entries, 
+                                                   include_personalization, include_rss, include_web)
+            else:
+                results = self.generate_all_prompts(include_personalization, include_rss, include_web, max_entries)
         else:
-            results = self.generate_all_content(merge_existing, include_personalization,
-                                              include_rss, include_web, debug_mode, max_entries)
+            if specific_files:
+                results = self.generate_specific_content(specific_files, max_entries, 
+                                                       merge_existing, include_personalization,
+                                                       include_rss, include_web, debug_mode)
+            else:
+                results = self.generate_all_content(merge_existing, include_personalization,
+                                                  include_rss, include_web, debug_mode, max_entries)
         
         success_count = sum(1 for success in results.values() if success)
         total_count = len(results)
@@ -132,7 +142,10 @@ class EDCopilotUpdater:
             status = f"{Fore.GREEN}✅{Style.RESET_ALL}" if success else f"{Fore.RED}❌{Style.RESET_ALL}"
             print(f"  {status} {chatter_type}")
         
-        print(f"\n{Fore.GREEN}🎉 Completed! {success_count}/{total_count} generators succeeded{Style.RESET_ALL}")
+        if prompt_only:
+            print(f"\n{Fore.GREEN}🎉 Completed! {success_count}/{total_count} prompts generated{Style.RESET_ALL}")
+        else:
+            print(f"\n{Fore.GREEN}🎉 Completed! {success_count}/{total_count} generators succeeded{Style.RESET_ALL}")
         return success_count == total_count
 
     def generate_specific_content(self, file_types: list, max_entries: int, 
@@ -244,6 +257,107 @@ class EDCopilotUpdater:
         
         return results
 
+    def generate_prompts_only(self, file_types: list, max_entries: int, 
+                           include_personalization: bool = True, include_rss: bool = True, 
+                           include_web: bool = True) -> Dict[str, bool]:
+        """Generate prompts for specific file types without sending to LLMs"""
+        print(f"{Fore.BLUE}🎯 Generating prompts for specific files: {', '.join(file_types)}...{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}📝 Max entries per file: {max_entries}{Style.RESET_ALL}")
+        
+        # Show personalization status
+        if include_personalization:
+            print(f"{Fore.CYAN}🎯 Personalization: Enabled{Style.RESET_ALL}")
+            if include_rss:
+                print(f"{Fore.CYAN}📡 RSS Feeds: Enabled{Style.RESET_ALL}")
+            if include_web:
+                print(f"{Fore.CYAN}🌐 Web Content: Enabled{Style.RESET_ALL}")
+        else:
+            print(f"{Fore.YELLOW}⚠️ Personalization: Disabled{Style.RESET_ALL}")
+        
+        print(f"{Fore.MAGENTA}🐛 Prompt-Only Mode: Prompts will be saved to output directory{Style.RESET_ALL}")
+
+        results = {}
+        with tqdm(total=len(file_types), desc="Generating prompts",
+                 bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]') as pbar:
+            for file_type in file_types:
+                if file_type not in self.generators:
+                    print(f"{Fore.RED}❌ Unknown file type: {file_type}{Style.RESET_ALL}")
+                    results[file_type] = False
+                    pbar.update(1)
+                    continue
+                
+                try:
+                    pbar.set_description(f"Generating prompt for {file_type}")
+                    generator = self.generators[file_type]
+                    
+                    success = generator.generate_prompt_only(
+                        max_entries=max_entries,
+                        include_personalization=include_personalization,
+                        include_rss=include_rss,
+                        include_web=include_web
+                    )
+                    results[file_type] = success
+                    
+                    if success:
+                        pbar.set_postfix_str(f"{Fore.GREEN}✅{Style.RESET_ALL}")
+                    else:
+                        pbar.set_postfix_str(f"{Fore.RED}❌{Style.RESET_ALL}")
+                        
+                except Exception as e:
+                    print(f"\n{Fore.RED}❌ Error generating prompt for {file_type}: {str(e)}{Style.RESET_ALL}")
+                    results[file_type] = False
+                    pbar.set_postfix_str(f"{Fore.RED}❌{Style.RESET_ALL}")
+                
+                pbar.update(1)
+        
+        return results
+
+    def generate_all_prompts(self, include_personalization: bool = True, include_rss: bool = True,
+                          include_web: bool = True, max_entries: int = 5) -> Dict[str, bool]:
+        """Generate prompts for all chatter types without sending to LLMs"""
+        print(f"{Fore.BLUE}🚀 Generating prompts for all chatter types...{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}📝 Max entries per file: {max_entries}{Style.RESET_ALL}")
+        
+        # Show personalization status
+        if include_personalization:
+            print(f"{Fore.CYAN}🎯 Personalization: Enabled{Style.RESET_ALL}")
+            if include_rss:
+                print(f"{Fore.CYAN}📡 RSS Feeds: Enabled{Style.RESET_ALL}")
+            if include_web:
+                print(f"{Fore.CYAN}🌐 Web Content: Enabled{Style.RESET_ALL}")
+        else:
+            print(f"{Fore.YELLOW}⚠️ Personalization: Disabled{Style.RESET_ALL}")
+        
+        print(f"{Fore.MAGENTA}🐛 Prompt-Only Mode: Prompts will be saved to output directory{Style.RESET_ALL}")
+
+        results = {}
+        with tqdm(total=len(self.generators), desc="Generating prompts",
+                 bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]') as pbar:
+            for chatter_type, generator in self.generators.items():
+                try:
+                    pbar.set_description(f"Generating prompt for {chatter_type}")
+                    success = generator.generate_prompt_only(
+                        max_entries=max_entries,
+                        include_personalization=include_personalization,
+                        include_rss=include_rss,
+                        include_web=include_web
+                    )
+                    results[chatter_type] = success
+                    
+                    if success:
+                        pbar.set_postfix_str(f"{Fore.GREEN}✅{Style.RESET_ALL}")
+                    else:
+                        pbar.set_postfix_str(f"{Fore.RED}❌{Style.RESET_ALL}")
+                        
+                except Exception as e:
+                    print(f"\n{Fore.RED}❌ Error generating prompt for {chatter_type}: {str(e)}{Style.RESET_ALL}")
+                    results[chatter_type] = False
+                    pbar.set_postfix_str(f"{Fore.RED}❌{Style.RESET_ALL}")
+                
+                pbar.update(1)
+        
+        return results
+
 
 def main():
     parser = argparse.ArgumentParser(description='EDCopilot Conversation Refresher')
@@ -267,8 +381,14 @@ def main():
                        help='Clear RSS cache before running')
     parser.add_argument('--cache-info', action='store_true',
                        help='Show RSS cache information and exit')
+    parser.add_argument('--prompt-only', action='store_true',
+                       help='Generate and save prompts without sending to LLMs (enables debug mode)')
     
     args = parser.parse_args()
+    
+    # If prompt-only is specified, enable debug mode
+    if args.prompt_only:
+        args.debug = True
     
     updater = EDCopilotUpdater(debug_mode=args.debug)
     
@@ -327,7 +447,8 @@ def main():
             include_web=include_web,
             debug_mode=debug_mode,
             specific_files=specific_files,
-            max_entries=max_entries
+            max_entries=max_entries,
+            prompt_only=args.prompt_only
         )
         return 0 if success else 1
 

@@ -19,9 +19,23 @@ class CrewChatterGenerator(BaseGenerator):
         """Build the prompt for crew chatter content generation"""
         return f"""
 You are generating crew interaction conversation content for Elite Dangerous EDCopilot. 
-This content will be used for conversations between ship crew members and about ship operations.
+This content will be used for conversations between ship crew members and the ship's computer (EDCoPilot).
 
-Generate exactly {num_entries} crew-related conversation examples that follow the EDCopilot format:
+Generate exactly {num_entries} crew interaction conversation examples that follow the EDCopilot format:
+
+## Personalization Context
+
+**Data:**
+{{data}}
+
+**Themes:**
+{{themes}}
+
+**Conversation Styles:**
+{{conversation_styles}}
+
+**Recent News:**
+{{rss_summary}}
 
 IMPORTANT: Vary the conversation lengths naturally. Aim for this distribution:
 - 40% short conversations (1-2 lines of dialogue)
@@ -45,12 +59,10 @@ Available speakers:
 - [<Engineering>] - Ship systems and maintenance
 - [<Comms>] - Communications and external contact
 - [<EDCoPilot>] - The ship's computer (AI assistant responses)
-- [<Crew:Medical>] - Medical crew member (use this format for medical matters)
-- [<Crew:Tactical>] - Tactical crew member (use this format for weapons/combat)
-- [<Crew:Maintenance>] - Maintenance crew member (use this format for specialized maintenance)
-- [<Crew:Security>] - Security crew member (use this format for security matters)
-
-Note: For specialized crew roles, use the format [<Crew:Role>] where Role is the specific job (e.g., [<Crew:Medical>], [<Crew:Tactical>], [<Crew:Maintenance>], etc.)
+- [<Crew:Medical>] - Medical crew member
+- [<Crew:Tactical>] - Tactical crew member
+- [<Crew:Maintenance>] - Maintenance crew member
+- [<Crew:Security>] - Security crew member
 
 Context tags to use (OPTIONAL - only on the first line of each conversation):
 - (not-station) - Will not pick this conversation if you are currently at/around a station
@@ -60,43 +72,50 @@ Context tags to use (OPTIONAL - only on the first line of each conversation):
 IMPORTANT: Context tags are optional and should only be used on the first line of each conversation when relevant. Use multiple tags when appropriate (e.g., (not-station) (not-planet) for conversations away from both stations and planets).
 
 **PROBABILITY GUIDELINES:**
-- Only 10% of conversations should include context tags
-- Most conversations (90%) should NOT have context tags
+- Only {{conditionals_chance}}% of conversations should include context tags
+- Most conversations ({{100-conditionals_chance}}%) should NOT have context tags
 - When context tags are used, they should only appear on the first line
+- Only {{personalization_chance}}% of conversations should include personal references
+- Only {{rss_chance}}% of conversations should reference recent news/events
 
 Examples of different conversation lengths:
 
 SHORT (1-2 lines):
 [example]
-[<Helm>] (not-station) (not-planet) Computer, plot a course to the nearest station.
-[<EDCoPilot>] Course plotted, Commander.
+[<Engineering>] (not-station) (not-planet) The power distribution is running smoothly today.
+[<EDCoPilot>] Affirmative, all systems are operating within optimal parameters.
 [/example]
 
 MEDIUM (3-4 lines):
 [example]
-[<Engineering>] (not-station) (not-planet) Captain, we're running low on fuel.
-[<Operations>] How much do we have left?
-[<Engineering>] About 15% remaining.
-[<Helm>] I'll find us a fuel depot immediately.
+[<Crew:Medical>] (not-station) I've completed the routine health scans for the crew.
+[<EDCoPilot>] Excellent, all crew members are showing normal vital signs.
+[<Operations>] The medical bay supplies are well-stocked for our current mission.
+[<Crew:Medical>] We're prepared for any emergency situations that might arise.
 [/example]
 
 LONGER (5-6 lines):
 [example]
-[<Crew:Tactical>] (not-station) Multiple hostiles detected on our six!
-[<Helm>] Evasive maneuvers initiated.
-[<Engineering>] Shields are holding at 85%.
-[<Operations>] Weapons systems are fully charged.
-[<Crew:Tactical>] Target acquired, ready to engage.
-[<Helm>] Engaging now!
+[<Helm>] (not-station) (not-planet) The navigation systems are detecting some unusual stellar phenomena ahead.
+[<Science>] Those readings suggest we're approaching a region of intense gravitational lensing.
+[<EDCoPilot>] I recommend we adjust our course to avoid potential navigation hazards.
+[<Crew:Tactical>] The tactical systems are ready to respond to any threats in the area.
+[<Operations>] All crew stations are prepared for the course correction.
+[<Helm>] Executing the course adjustment now, Commander.
 [/example]
 
 Generate conversations that are:
-- Focused on ship operations and crew interactions
-- Professional but friendly in tone
+- Focused on ship crew interactions and operations
+- Realistic and professional in tone
 - Include appropriate speaker tags and context tags
-- Realistic for a space ship crew
+- Engaging for space simulation enthusiasts
 - Vary naturally in length (short conversations should be more common)
 - Each conversation wrapped in [example]...[/example] tags
+- Use the specified theme and style preferences
+- Follow the content guidelines and avoid topics that should be avoided
+- Ensure conversations feel natural and varied
+- Mix generic and personalized content appropriately
+- Incorporate recent news and events naturally when relevant
 
 Format the output with each conversation wrapped in [example]...[/example] tags.
 """

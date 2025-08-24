@@ -32,6 +32,20 @@ Generate exactly {num_entries} casual chit chat phrases that are:
   - <ship> - Ship name
   - <credits> - Current credits
 
+## Personalization Context
+
+**Data:**
+{{data}}
+
+**Themes:**
+{{themes}}
+
+**Conversation Styles:**
+{{conversation_styles}}
+
+**Recent News:**
+{{rss_summary}}
+
 Examples of proper chit chat format:
 - Hello <cmdrname>, how can I assist you today?
 - We are currently in the <starsystem> system.
@@ -48,9 +62,9 @@ Generate phrases that are:
 - Include occasional tokens for personalization
 
 **PROBABILITY GUIDELINES:**
-- Only 25% of phrases should include personal references (commander name, squadron, fleet carrier)
-- Only 15% of phrases should reference recent news/events
-- Most phrases (75-85%) should be generic and not personalized
+- Only {{personalization_chance}}% of phrases should include personal references (commander name, squadron, fleet carrier)
+- Only {{rss_chance}}% of phrases should reference recent news/events
+- Most phrases ({{100-personalization_chance}}%) should be generic and not personalized
 - Mix generic and personalized content appropriately
 
 Format the output as plain text with one phrase per line.

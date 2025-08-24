@@ -52,6 +52,9 @@ class PersonalizationManager:
         lines = content.split('\n')
         current_section = None
         
+        # Define valid sections that we want to process
+        valid_sections = ['Data', 'Themes', 'RSS Feeds', 'Conversation Styles']
+        
         for line in lines:
             line = line.strip()
             
@@ -60,18 +63,26 @@ class PersonalizationManager:
                 continue
             
             # Check for headers
-            if line.startswith('#'):
-                current_section = line.lstrip('#').strip()
+            if line.startswith('##'):
+                section_name = line.lstrip('##').strip()
+                # Only process valid sections
+                if section_name in valid_sections:
+                    current_section = section_name
+                    logger.info(f"📝 Processing section: {current_section}")
+                else:
+                    current_section = None
+                    logger.info(f"⏭️ Skipping section: {section_name}")
                 continue
             
-            # Check for RSS feeds
-            if 'rss' in line.lower() and 'http' in line:
-                urls = self._extract_urls(line)
-                self.rss_feeds.extend(urls)
-                logger.info(f"📡 Found RSS feeds: {urls}")
+            # Check for RSS feeds (only in RSS Feeds section)
+            if current_section == 'RSS Feeds' and 'rss' in line.lower() and 'http' in line:
+                feed_info = self._extract_rss_feed_info(line)
+                if feed_info:
+                    self.rss_feeds.append(feed_info)
+                    logger.info(f"📡 Found RSS feed: {feed_info['url']} (max entries: {feed_info.get('max_entries', 'all')})")
             
-            # Store context data
-            if current_section and line:
+            # Store context data only for valid sections
+            if current_section and current_section in valid_sections and line:
                 if current_section not in self.context_data:
                     self.context_data[current_section] = []
                 self.context_data[current_section].append(line)
@@ -80,6 +91,35 @@ class PersonalizationManager:
         """Extract URLs from text"""
         url_pattern = r'https?://[^\s<>"{}|\\^`\[\]]+'
         return re.findall(url_pattern, text)
+    
+    def _extract_rss_feed_info(self, text: str) -> Optional[Dict[str, any]]:
+        """Extract RSS feed URL and optional entry limit from text"""
+        # Look for pattern like "[2] https://example.com/rss.xml" or just "https://example.com/rss.xml"
+        import re
+        
+        # Pattern to match [number] followed by URL
+        pattern = r'\[(\d+)\]\s*(https?://[^\s<>"{}|\\^`\[\]]+)'
+        match = re.search(pattern, text)
+        
+        if match:
+            max_entries = int(match.group(1))
+            url = match.group(2)
+            return {
+                'url': url,
+                'max_entries': max_entries
+            }
+        
+        # If no bracket pattern, just extract URL (no entry limit)
+        url_pattern = r'https?://[^\s<>"{}|\\^`\[\]]+'
+        url_match = re.search(url_pattern, text)
+        
+        if url_match:
+            return {
+                'url': url_match.group(0),
+                'max_entries': None  # No limit specified
+            }
+        
+        return None
     
     def _get_cache_file_path(self, feed_url: str) -> Path:
         """Get the cache file path for a feed URL"""
@@ -130,7 +170,7 @@ class PersonalizationManager:
         except Exception as e:
             logger.warning(f"⚠️ Failed to save RSS cache for {feed_url}: {str(e)}")
     
-    def fetch_rss_content(self, max_entries: int = 10) -> Dict[str, List[str]]:
+    def fetch_rss_content(self, default_max_entries: int = 10) -> Dict[str, List[str]]:
         """Fetch content from RSS feeds with caching"""
         if not self.rss_feeds:
             logger.info("📡 No RSS feeds configured")
@@ -138,13 +178,19 @@ class PersonalizationManager:
         
         rss_content = {}
         
-        for feed_url in self.rss_feeds:
+        for feed_info in self.rss_feeds:
+            feed_url = feed_info['url']
+            max_entries = feed_info.get('max_entries', default_max_entries)
+            
             # Try to load from cache first
             cached_data = self._load_cached_rss(feed_url)
             
             if cached_data:
-                # Use cached data
-                rss_content[feed_url] = cached_data.get('entries', [])
+                # Use cached data, but respect the feed's entry limit
+                cached_entries = cached_data.get('entries', [])
+                if max_entries is not None:
+                    cached_entries = cached_entries[:max_entries]
+                rss_content[feed_url] = cached_entries
                 logger.info(f"📡 Using cached RSS data for {feed_url} ({len(rss_content[feed_url])} entries)")
                 continue
             
@@ -157,7 +203,10 @@ class PersonalizationManager:
                     logger.warning(f"⚠️ RSS feed parsing warning: {feed.bozo_exception}")
                 
                 entries = []
-                for entry in feed.entries[:max_entries]:
+                # Use feed-specific max_entries if specified, otherwise use default
+                entry_limit = max_entries if max_entries is not None else default_max_entries
+                
+                for entry in feed.entries[:entry_limit]:
                     title = getattr(entry, 'title', '')
                     summary = getattr(entry, 'summary', '')
                     published = getattr(entry, 'published', '')
@@ -178,7 +227,7 @@ class PersonalizationManager:
                     cache_data = {
                         'entries': entries,
                         'fetched_at': datetime.now(timezone.utc),
-                        'max_entries': max_entries
+                        'max_entries': entry_limit
                     }
                     self._save_rss_cache(feed_url, cache_data)
                 
@@ -250,7 +299,10 @@ class PersonalizationManager:
             if rss_content:
                 context_parts.append("## Recent News and Updates:")
                 for feed_url, entries in rss_content.items():
-                    context_parts.append(f"### From {feed_url}:")
+                    # Find the feed info to show entry limit
+                    feed_info = next((f for f in self.rss_feeds if f['url'] == feed_url), None)
+                    entry_limit = feed_info.get('max_entries', 'all') if feed_info else 'all'
+                    context_parts.append(f"### From {feed_url} (max {entry_limit} entries):")
                     for entry in entries:
                         context_parts.append(f"- {entry}")
                     context_parts.append("")
@@ -259,12 +311,14 @@ class PersonalizationManager:
         if include_web:
             # Extract URLs from context data, excluding RSS feed URLs
             all_urls = []
+            rss_urls = [feed_info['url'] for feed_info in self.rss_feeds]
+            
             for section, items in self.context_data.items():
                 for item in items:
                     urls = self._extract_urls(item)
                     # Filter out RSS feed URLs to avoid duplicate fetching
                     for url in urls:
-                        if url not in self.rss_feeds:
+                        if url not in rss_urls:
                             all_urls.append(url)
             
             if all_urls:
@@ -277,6 +331,47 @@ class PersonalizationManager:
                         context_parts.append("")
         
         return "\n".join(context_parts)
+    
+    def get_data_section(self) -> str:
+        """Get formatted data section for template variables"""
+        if 'Data' in self.context_data:
+            items = self.context_data['Data']
+            return '\n'.join([f"- {item}" for item in items])
+        return ""
+    
+    def get_themes_section(self) -> str:
+        """Get formatted themes section for template variables"""
+        if 'Themes' in self.context_data:
+            items = self.context_data['Themes']
+            return '\n'.join([f"- {item}" for item in items])
+        return ""
+    
+    def get_conversation_styles_section(self) -> str:
+        """Get formatted conversation styles section for template variables"""
+        if 'Conversation Styles' in self.context_data:
+            items = self.context_data['Conversation Styles']
+            return '\n'.join([f"- {item}" for item in items])
+        return ""
+    
+    def get_rss_summary(self) -> str:
+        """Get formatted RSS summary for template variables"""
+        if not self.rss_feeds:
+            return ""
+        
+        rss_content = self.fetch_rss_content()
+        if not rss_content:
+            return ""
+        
+        summary_parts = []
+        for feed_url, entries in rss_content.items():
+            feed_info = next((f for f in self.rss_feeds if f['url'] == feed_url), None)
+            entry_limit = feed_info.get('max_entries', 'all') if feed_info else 'all'
+            summary_parts.append(f"### From {feed_url} (max {entry_limit} entries):")
+            for entry in entries:
+                summary_parts.append(f"- {entry}")
+            summary_parts.append("")
+        
+        return '\n'.join(summary_parts)
     
     def get_user_preferences(self) -> Dict[str, any]:
         """Extract user preferences from context data"""

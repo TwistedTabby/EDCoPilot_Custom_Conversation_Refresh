@@ -50,6 +50,9 @@ class BaseGenerator(ABC):
         logger.info(f"🚀 Starting content generation for {self.chatter_type}")
         base_prompt = self._build_prompt(num_entries)
         
+        # Apply template variable replacement
+        base_prompt = self._replace_template_variables(base_prompt, num_entries)
+        
         # Build enhanced prompt with personalization if enabled
         if include_personalization:
             personalization_context = self.api_client.personalization_manager.get_personalization_context(
@@ -123,6 +126,48 @@ class BaseGenerator(ABC):
             logger.error(f"❌ Failed to deploy {self.chatter_type}")
         
         return success
+    
+    def generate_prompt_only(self, max_entries: int = 5, include_personalization: bool = True,
+                           include_rss: bool = True, include_web: bool = True) -> bool:
+        """Generate and save the prompt without sending to LLMs"""
+        logger.info(f"📝 Generating prompt for {self.chatter_type}")
+        
+        # Build the base prompt
+        base_prompt = self._build_prompt(max_entries)
+        
+        # Apply template variable replacement
+        base_prompt = self._replace_template_variables(base_prompt, max_entries)
+        
+        # Build enhanced prompt with personalization if enabled
+        if include_personalization:
+            personalization_context = self.api_client.personalization_manager.get_personalization_context(
+                include_rss=include_rss, include_web=include_web)
+            if personalization_context:
+                enhanced_prompt = self._build_enhanced_prompt(base_prompt, personalization_context)
+                final_prompt = enhanced_prompt
+            else:
+                final_prompt = base_prompt
+        else:
+            final_prompt = base_prompt
+        
+        # Create a namespaced filename for the prompt
+        prompt_filename = f"prompt_{self.chatter_type}.txt"
+        
+        # Save the prompt to the output directory
+        try:
+            output_path = self.file_manager.get_output_path(prompt_filename)
+            success = self.file_manager.write_content(str(output_path), final_prompt)
+            
+            if success:
+                logger.info(f"✅ Prompt saved to {output_path}")
+                return True
+            else:
+                logger.error(f"❌ Failed to save prompt to {output_path}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"❌ Error saving prompt for {self.chatter_type}: {str(e)}")
+            return False
     
     def _output_debug_content(self, content: str):
         """Output generated content to shell in debug mode"""
@@ -228,9 +273,6 @@ class BaseGenerator(ABC):
 
 ## Content Style and Preferences:
 {personal_data['quick_notes']}
-
-## Recent Context and News:
-{personal_data['rss_summary']}
 
 ## Generation Instructions:
 When generating conversations, please follow these probability guidelines:
@@ -633,6 +675,36 @@ When generating conversations, please follow these probability guidelines:
         except Exception as e:
             logger.error(f"❌ Error deploying content for {self.chatter_type}: {str(e)}")
             return False
+    
+    def _replace_template_variables(self, prompt: str, num_entries: int) -> str:
+        """Replace template variables in the prompt with actual values"""
+        # Get personalization data
+        pm = self.api_client.personalization_manager
+        
+        # Basic variables
+        replacements = {
+            '{num_entries}': str(num_entries),
+            '{chatter_type}': self.chatter_type,
+            '{personalization_chance}': str(Config.CONVERSATIONS_CHANCE_PERSONALIZATION),
+            '{rss_chance}': str(Config.CONVERSATIONS_CHANCE_RSS),
+            '{conditionals_chance}': str(Config.CONVERSATIONS_CHANCE_CONDITIONALS),
+            '{100-personalization_chance}': str(100 - Config.CONVERSATIONS_CHANCE_PERSONALIZATION),
+            '{100-conditionals_chance}': str(100 - Config.CONVERSATIONS_CHANCE_CONDITIONALS),
+        }
+        
+        # Personalization variables
+        replacements.update({
+            '{data}': pm.get_data_section(),
+            '{themes}': pm.get_themes_section(),
+            '{conversation_styles}': pm.get_conversation_styles_section(),
+            '{rss_summary}': pm.get_rss_summary(),
+        })
+        
+        # Replace all variables in the prompt
+        for variable, value in replacements.items():
+            prompt = prompt.replace(variable, value)
+        
+        return prompt
     
     @abstractmethod
     def _build_prompt(self, num_entries: int) -> str:

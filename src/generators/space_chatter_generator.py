@@ -23,6 +23,20 @@ This content will be used for conversations specifically about space exploration
 
 Generate exactly {num_entries} space-themed conversation examples that follow the EDCopilot format:
 
+## Personalization Context
+
+**Data:**
+{{data}}
+
+**Themes:**
+{{themes}}
+
+**Conversation Styles:**
+{{conversation_styles}}
+
+**Recent News:**
+{{rss_summary}}
+
 IMPORTANT: Vary the conversation lengths naturally. Aim for this distribution:
 - 40% short conversations (1-2 lines of dialogue)
 - 35% medium conversations (3-4 lines of dialogue) 
@@ -53,9 +67,11 @@ Context tags to use (OPTIONAL - only on the first line of each conversation):
 IMPORTANT: Context tags are optional and should only be used on the first line of each conversation when relevant. Use multiple tags when appropriate (e.g., (not-station) (not-planet) for conversations away from both stations and planets).
 
 **PROBABILITY GUIDELINES:**
-- Only 10% of conversations should include context tags
-- Most conversations (90%) should NOT have context tags
+- Only {{conditionals_chance}}% of conversations should include context tags
+- Most conversations ({{100-conditionals_chance}}%) should NOT have context tags
 - When context tags are used, they should only appear on the first line
+- Only {{personalization_chance}}% of conversations should include personal references
+- Only {{rss_chance}}% of conversations should reference recent news/events
 
 Examples of different conversation lengths:
 
@@ -90,6 +106,11 @@ Generate conversations that are:
 - Engaging for space enthusiasts
 - Vary naturally in length (short conversations should be more common)
 - Each conversation wrapped in [example]...[/example] tags
+- Use the specified theme and style preferences
+- Follow the content guidelines and avoid topics that should be avoided
+- Ensure conversations feel natural and varied
+- Mix generic and personalized content appropriately
+- Incorporate recent news and events naturally when relevant
 
 Format the output with each conversation wrapped in [example]...[/example] tags.
 """
