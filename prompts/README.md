@@ -14,6 +14,9 @@ py src/main.py --generate-prompt-template --files chit_chat crew_chatter
 
 # Generate prompt file for one chatter type
 py src/main.py --generate-prompt-template --files space_chatter
+
+# Test your prompt file by using the "prompt-only" argument. They will appear in the output folder.
+py src/main.py --files chit_chat --prompt-only
 ```
 
 This will create individual prompt files for the specified chatter types (or all types if none specified) with all the available template variables and examples specific to each type.

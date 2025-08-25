@@ -19,23 +19,15 @@ class DeepSpaceChatterGenerator(BaseGenerator):
         """Build the prompt for deep space chatter content generation"""
         return f"""
 You are generating deep space exploration conversation content for Elite Dangerous EDCopilot. 
-This content will be used for conversations specifically about deep space exploration, mysteries, and encounters far from civilized space.
+While onboard our ship, we may hear our crew talking among themselves . They may be discussing ship operations, making small talk, or talking about places of interest in our vicinity.
+This content will be used when you are more than 5000 light-years from both Sol and Colonia. You can use this type of chatter to focus conversations more on exploration, crew morale, ship maintenance, unexplained phenomena.
 
 Generate exactly {num_entries} deep space exploration conversation examples that follow the EDCopilot format:
 
 ## Personalization Context
 
-**Data:**
+**Facts:**
 {{data}}
-
-**Themes:**
-{{themes}}
-
-**Conversation Styles:**
-{{conversation_styles}}
-
-**Recent News:**
-{{rss_summary}}
 
 IMPORTANT: Vary the conversation lengths naturally. Aim for this distribution:
 - 40% short conversations (1-2 lines of dialogue)
@@ -45,12 +37,6 @@ IMPORTANT: Vary the conversation lengths naturally. Aim for this distribution:
 
 Each conversation should be wrapped in [example]...[/example] tags.
 
-Format: 
-[example]
-[<Speaker>] (context-tags) Message content
-[<Speaker>] (context-tags) Response content
-[/example]
-
 Available speakers:
 - [<Number1>] - First crew member
 - [<Science>] - Scientific observations and analysis
@@ -59,21 +45,26 @@ Available speakers:
 - [<Engineering>] - Ship systems and maintenance
 - [<Comms>] - Communications and external contact
 - [<EDCoPilot>] - The ship's computer (AI assistant responses)
-- [<Crew:Medical>] - Medical crew member
-- [<Crew:Tactical>] - Tactical crew member
-- [<Crew:Maintenance>] - Maintenance crew member
-- [<Crew:Security>] - Security crew member
+- [<Crew:ROLE>] - If used, create a role name to replace ROLE
 - [<Ship1>] - First ship encounter
 - [<Ship2>] - Second ship encounter
 - [<Ship3>] - Third ship encounter
 - [<Ship4>] - Fourth ship encounter
 
-Context tags to use (OPTIONAL - only on the first line of each conversation):
+Condition tags to use (OPTIONAL - only on the first line of each conversation and can include multiple conditions):
 - (not-station) - Will not pick this conversation if you are currently at/around a station
 - (not-planet) - Will not pick this conversation if you are currently on or approaching a planet
 - (not-deep-space) - Will not pick this conversation if you are currently out in deep space (> 5000 ly from Sol and Colonia)
 
-IMPORTANT: Context tags are optional and should only be used on the first line of each conversation when relevant. Use multiple tags when appropriate (e.g., (not-station) (not-planet) for conversations away from both stations and planets).
+Tokens that can be used in the conversation:
+- <cmdrname> : your Commander's name (without the “Commander” at the beginning)
+- <cmdraddress> : will be replaced by Sir, Ma'am, or Commander based on the gender you have set in Settings
+- <myshipname> : the name of your active ship
+- <fuellevels> : will be replaced by your current fuel level percentage number
+- <starsystem> : name of your current system
+- <randomstarsystem> : name of a random populated system
+- <stationname> : name of the current station you are at
+- <fcCaptain> : name of your Fleet Carrier Captain
 
 **PROBABILITY GUIDELINES:**
 - Only {{conditionals_chance}}% of conversations should include context tags
@@ -86,13 +77,13 @@ Examples of different conversation lengths:
 
 SHORT (1-2 lines):
 [example]
-[<Science>] (not-station) (not-planet) The stellar density out here is absolutely incredible.
+[<Science>] The stellar density out here is absolutely incredible.
 [<EDCoPilot>] Indeed, we're in a region of the galaxy rarely explored by human vessels.
 [/example]
 
 MEDIUM (3-4 lines):
 [example]
-[<Helm>] (not-station) (not-planet) I'm picking up some unusual energy signatures ahead.
+[<Helm>] (not-station) I'm picking up some unusual energy signatures ahead.
 [<Science>] Those readings don't match any known stellar phenomena.
 [<Operations>] Should we investigate or maintain our current course?
 [<EDCoPilot>] I recommend caution, Commander. This region is largely uncharted.
@@ -100,7 +91,7 @@ MEDIUM (3-4 lines):
 
 LONGER (5-6 lines):
 [example]
-[<Science>] (not-station) (not-planet) The gravitational anomalies in this sector are unlike anything I've ever seen.
+[<Science>] (not-station) The gravitational anomalies in this sector are unlike anything I've ever seen.
 [<EDCoPilot>] My sensors are detecting spatial distortions that suggest ancient stellar events.
 [<Crew:Tactical>] The tactical systems are registering potential threats in the vicinity.
 [<Operations>] All crew stations are on high alert for any unusual activity.
@@ -110,16 +101,25 @@ LONGER (5-6 lines):
 
 Generate conversations that are:
 - Focused on deep space exploration and mysteries
+- Focused on ship crew interactions and operations
 - Mysterious and awe-inspiring in tone
-- Include appropriate speaker tags and context tags
 - Engaging for space exploration enthusiasts
-- Vary naturally in length (short conversations should be more common)
+- Ensure conversations feel natural and varied
+- Mix generic and personalized content appropriately
+- Include appropriate speaker tags and condition tags
+- Engaging for space simulation enthusiasts
 - Each conversation wrapped in [example]...[/example] tags
-- Use the specified theme and style preferences
-- Follow the content guidelines and avoid topics that should be avoided
 - Ensure conversations feel natural and varied
 - Mix generic and personalized content appropriately
 - Incorporate recent news and events naturally when relevant
+- Avoid conversations about present events that may or may not be true. (e.g. "The <station> docking bay is quite busy today.")
+- To talk about things that ship crew would talk about specific to their role use past tense like "Remember when we saw that black hole?"
+{{themes}}
+{{conversation_styles}}
 
-Format the output with each conversation wrapped in [example]...[/example] tags.
+Format: 
+[example]
+[<Speaker>] (condition-tags) Message content
+[<Speaker>] Response content
+[/example]
 """

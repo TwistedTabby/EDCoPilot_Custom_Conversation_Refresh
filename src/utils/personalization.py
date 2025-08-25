@@ -85,6 +85,11 @@ class PersonalizationManager:
             if current_section and current_section in valid_sections and line:
                 if current_section not in self.context_data:
                     self.context_data[current_section] = []
+                
+                # Strip any existing "- " prefix to avoid double-formatting
+                if line.startswith('- '):
+                    line = line[2:]  # Remove the "- " prefix
+                
                 self.context_data[current_section].append(line)
     
     def _extract_urls(self, text: str) -> List[str]:
@@ -170,7 +175,7 @@ class PersonalizationManager:
         except Exception as e:
             logger.warning(f"⚠️ Failed to save RSS cache for {feed_url}: {str(e)}")
     
-    def fetch_rss_content(self, default_max_entries: int = 10) -> Dict[str, List[str]]:
+    def fetch_rss_content(self, default_max_entries: int = 10) -> Dict[str, List[Dict[str, str]]]:
         """Fetch content from RSS feeds with caching"""
         if not self.rss_feeds:
             logger.info("📡 No RSS feeds configured")
@@ -211,13 +216,14 @@ class PersonalizationManager:
                     summary = getattr(entry, 'summary', '')
                     published = getattr(entry, 'published', '')
                     
-                    entry_text = f"Title: {title}"
-                    if summary:
-                        entry_text += f" | Summary: {summary}"
-                    if published:
-                        entry_text += f" | Published: {published}"
+                    # Create structured entry data
+                    entry_data = {
+                        'title': title,
+                        'summary': summary,
+                        'published': published
+                    }
                     
-                    entries.append(entry_text)
+                    entries.append(entry_data)
                 
                 if entries:
                     rss_content[feed_url] = entries
@@ -303,9 +309,28 @@ class PersonalizationManager:
                     feed_info = next((f for f in self.rss_feeds if f['url'] == feed_url), None)
                     entry_limit = feed_info.get('max_entries', 'all') if feed_info else 'all'
                     context_parts.append(f"### From {feed_url} (max {entry_limit} entries):")
+                    
                     for entry in entries:
-                        context_parts.append(f"- {entry}")
-                    context_parts.append("")
+                        # Title outside code block
+                        title = entry.get('title', '')
+                        summary = entry.get('summary', '')
+                        published = entry.get('published', '')
+                        
+                        context_parts.append(f"**{title}**")
+                        
+                        # Content inside code block
+                        content_parts = []
+                        if summary:
+                            content_parts.append(summary)
+                        if published:
+                            content_parts.append(f"Published: {published}")
+                        
+                        if content_parts:
+                            context_parts.append("```")
+                            context_parts.append("\n".join(content_parts))
+                            context_parts.append("```")
+                        
+                        context_parts.append("")
         
         # Add web content if requested
         if include_web:
@@ -343,6 +368,7 @@ class PersonalizationManager:
         """Get formatted themes section for template variables"""
         if 'Themes' in self.context_data:
             items = self.context_data['Themes']
+            # Always add "- " prefix since we strip it during parsing
             return '\n'.join([f"- {item}" for item in items])
         return ""
     
@@ -350,6 +376,7 @@ class PersonalizationManager:
         """Get formatted conversation styles section for template variables"""
         if 'Conversation Styles' in self.context_data:
             items = self.context_data['Conversation Styles']
+            # Always add "- " prefix since we strip it during parsing
             return '\n'.join([f"- {item}" for item in items])
         return ""
     
@@ -367,9 +394,28 @@ class PersonalizationManager:
             feed_info = next((f for f in self.rss_feeds if f['url'] == feed_url), None)
             entry_limit = feed_info.get('max_entries', 'all') if feed_info else 'all'
             summary_parts.append(f"### From {feed_url} (max {entry_limit} entries):")
+            
             for entry in entries:
-                summary_parts.append(f"- {entry}")
-            summary_parts.append("")
+                # Title outside code block
+                title = entry.get('title', '')
+                summary = entry.get('summary', '')
+                published = entry.get('published', '')
+                
+                summary_parts.append(f"**{title}**")
+                
+                # Content inside code block
+                content_parts = []
+                if summary:
+                    content_parts.append(summary)
+                if published:
+                    content_parts.append(f"Published: {published}")
+                
+                if content_parts:
+                    summary_parts.append("```")
+                    summary_parts.append("\n".join(content_parts))
+                    summary_parts.append("```")
+                
+                summary_parts.append("")
         
         return '\n'.join(summary_parts)
     

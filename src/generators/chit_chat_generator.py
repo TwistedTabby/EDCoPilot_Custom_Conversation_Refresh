@@ -19,12 +19,11 @@ class ChitChatGenerator(BaseGenerator):
         """Build the prompt for chit chat content generation"""
         return f"""
 You are generating casual chit chat phrases for Elite Dangerous EDCopilot. 
-This content will be used for general chit chat where EDCopilot speaks directly to the commander.
+The Chit Chat feature enables your CoPilot to say random phrases after a period of inactivity.
 
 Generate exactly {num_entries} casual chit chat phrases that are:
 
 - Simple, standalone phrases spoken by EDCopilot
-- NO speaker tags, NO context tags - just the phrases themselves
 - Can include tokens that EDCopilot will replace with game data:
   - <cmdrname> - Commander's name
   - <starsystem> - Current star system
@@ -34,14 +33,8 @@ Generate exactly {num_entries} casual chit chat phrases that are:
 
 ## Personalization Context
 
-**Data:**
+**Facts:**
 {{data}}
-
-**Themes:**
-{{themes}}
-
-**Conversation Styles:**
-{{conversation_styles}}
 
 **Recent News:**
 {{rss_summary}}
@@ -49,23 +42,21 @@ Generate exactly {num_entries} casual chit chat phrases that are:
 Examples of proper chit chat format:
 - Hello <cmdrname>, how can I assist you today?
 - We are currently in the <starsystem> system.
-- Your <ship> is looking good, Commander.
-- I hope you're having a productive day, <cmdrname>.
-- The <station> docking bay is quite busy today.
-
-Generate phrases that are:
-- Light-hearted and friendly
-- Appropriate for casual conversation
-- Natural and conversational in tone
-- One phrase per line
-- No numbering or bullet points
-- Include occasional tokens for personalization
+- Listed to a great Galnet article last night.
 
 **PROBABILITY GUIDELINES:**
 - Only {{personalization_chance}}% of phrases should include personal references (commander name, squadron, fleet carrier)
-- Only {{rss_chance}}% of phrases should reference recent news/events
+- Only {{rss_chance}}% of phrases should reference recent news
 - Most phrases ({{100-personalization_chance}}%) should be generic and not personalized
 - Mix generic and personalized content appropriately
+
+Generate phrases that are defined by the following guidelines:
+- Natural and conversational in tone
+- (REQUIRED) One phrase per line
+- Include portions of recent news
+- Include occasional tokens for personalization
+{{themes}}
+{{conversation_styles}}
 
 Format the output as plain text with one phrase per line.
 """

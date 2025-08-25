@@ -135,20 +135,8 @@ class BaseGenerator(ABC):
         # Build the base prompt
         base_prompt = self._build_prompt(max_entries)
         
-        # Apply template variable replacement
-        base_prompt = self._replace_template_variables(base_prompt, max_entries)
-        
-        # Build enhanced prompt with personalization if enabled
-        if include_personalization:
-            personalization_context = self.api_client.personalization_manager.get_personalization_context(
-                include_rss=include_rss, include_web=include_web)
-            if personalization_context:
-                enhanced_prompt = self._build_enhanced_prompt(base_prompt, personalization_context)
-                final_prompt = enhanced_prompt
-            else:
-                final_prompt = base_prompt
-        else:
-            final_prompt = base_prompt
+        # Apply template variable replacement (this includes personalization data)
+        final_prompt = self._replace_template_variables(base_prompt, max_entries)
         
         # Create a namespaced filename for the prompt
         prompt_filename = f"prompt_{self.chatter_type}.txt"
@@ -698,6 +686,10 @@ When generating conversations, please follow these probability guidelines:
             '{themes}': pm.get_themes_section(),
             '{conversation_styles}': pm.get_conversation_styles_section(),
             '{rss_summary}': pm.get_rss_summary(),
+            '{{data}}': pm.get_data_section(),
+            '{{themes}}': pm.get_themes_section(),
+            '{{conversation_styles}}': pm.get_conversation_styles_section(),
+            '{{rss_summary}}': pm.get_rss_summary(),
         })
         
         # Replace all variables in the prompt

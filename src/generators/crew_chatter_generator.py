@@ -19,20 +19,14 @@ class CrewChatterGenerator(BaseGenerator):
         """Build the prompt for crew chatter content generation"""
         return f"""
 You are generating crew interaction conversation content for Elite Dangerous EDCopilot. 
-This content will be used for conversations between ship crew members and the ship's computer (EDCoPilot).
+While onboard our ship, we may hear our crew talking among themselves . They may be discussing ship operations, making small talk, or talking about places of interest in our vicinity.
 
 Generate exactly {num_entries} crew interaction conversation examples that follow the EDCopilot format:
 
 ## Personalization Context
 
-**Data:**
+**Facts:**
 {{data}}
-
-**Themes:**
-{{themes}}
-
-**Conversation Styles:**
-{{conversation_styles}}
 
 **Recent News:**
 {{rss_summary}}
@@ -43,14 +37,6 @@ IMPORTANT: Vary the conversation lengths naturally. Aim for this distribution:
 - 20% longer conversations (5-6 lines of dialogue)
 - 5% extended conversations (7+ lines of dialogue)
 
-Each conversation should be wrapped in [example]...[/example] tags.
-
-Format: 
-[example]
-[<Speaker>] (context-tags) Message content
-[<Speaker>] (context-tags) Response content
-[/example]
-
 Available speakers:
 - [<Number1>] - First crew member
 - [<Science>] - Scientific observations and analysis
@@ -59,17 +45,12 @@ Available speakers:
 - [<Engineering>] - Ship systems and maintenance
 - [<Comms>] - Communications and external contact
 - [<EDCoPilot>] - The ship's computer (AI assistant responses)
-- [<Crew:Medical>] - Medical crew member
-- [<Crew:Tactical>] - Tactical crew member
-- [<Crew:Maintenance>] - Maintenance crew member
-- [<Crew:Security>] - Security crew member
+- [<Crew:ROLE>] - If used, create a role name to replace ROLE
 
-Context tags to use (OPTIONAL - only on the first line of each conversation):
+Context tags to use (OPTIONAL - only on the first line of each conversation and can have multiple tags):
 - (not-station) - Will not pick this conversation if you are currently at/around a station
 - (not-planet) - Will not pick this conversation if you are currently on or approaching a planet
 - (not-deep-space) - Will not pick this conversation if you are currently out in deep space (> 5000 ly from Sol and Colonia)
-
-IMPORTANT: Context tags are optional and should only be used on the first line of each conversation when relevant. Use multiple tags when appropriate (e.g., (not-station) (not-planet) for conversations away from both stations and planets).
 
 **PROBABILITY GUIDELINES:**
 - Only {{conditionals_chance}}% of conversations should include context tags
@@ -106,16 +87,21 @@ LONGER (5-6 lines):
 
 Generate conversations that are:
 - Focused on ship crew interactions and operations
-- Realistic and professional in tone
 - Include appropriate speaker tags and context tags
 - Engaging for space simulation enthusiasts
 - Vary naturally in length (short conversations should be more common)
 - Each conversation wrapped in [example]...[/example] tags
-- Use the specified theme and style preferences
-- Follow the content guidelines and avoid topics that should be avoided
 - Ensure conversations feel natural and varied
 - Mix generic and personalized content appropriately
 - Incorporate recent news and events naturally when relevant
+- Avoid conversations about present events that may or may not be true. (e.g. "The <station> docking bay is quite busy today.")
+- To talk about things that ship crew would talk about specific to their role use past tense like "Remember when we saw that black hole?"
+{{themes}}
+{{conversation_styles}}
 
-Format the output with each conversation wrapped in [example]...[/example] tags.
+Format: 
+[example]
+[<Speaker>] (condition-tags) Message content
+[<Speaker>] Response content
+[/example]
 """

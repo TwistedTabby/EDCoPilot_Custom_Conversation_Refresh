@@ -19,7 +19,7 @@ class SpaceChatterGenerator(BaseGenerator):
         """Build the prompt for space chatter content generation"""
         return f"""
 You are generating space-themed conversation content for Elite Dangerous EDCopilot. 
-This content will be used for conversations specifically about space exploration, astronomy, and space phenomena.
+While we are waiting to dock at a station we can hear radio transmissions from other ships around us who are either requesting docking, waiting to dock, or are inside the station preparing to leave. Their requests may be replied to by the Control Tower in the station.
 
 Generate exactly {num_entries} space-themed conversation examples that follow the EDCopilot format:
 
@@ -27,12 +27,6 @@ Generate exactly {num_entries} space-themed conversation examples that follow th
 
 **Data:**
 {{data}}
-
-**Themes:**
-{{themes}}
-
-**Conversation Styles:**
-{{conversation_styles}}
 
 **Recent News:**
 {{rss_summary}}
@@ -43,14 +37,6 @@ IMPORTANT: Vary the conversation lengths naturally. Aim for this distribution:
 - 20% longer conversations (5-6 lines of dialogue)
 - 5% extended conversations (7+ lines of dialogue)
 
-Each conversation should be wrapped in [example]...[/example] tags.
-
-Format: 
-[example]
-[<Speaker>] (context-tags) Message content
-[<Speaker>] (context-tags) Response content
-[/example]
-
 Available speakers:
 - [<Helm>] - Navigation and piloting observations
 - [<EDCoPilot>] - AI assistant responses about space
@@ -58,8 +44,9 @@ Available speakers:
 - [<Operations>] - General space observations
 - [<Tactical>] - Space hazards and navigation warnings
 - [<Communications>] - Communications about space phenomena
+- [<Crew:ROLE>] - If used, create a role name to replace ROLE
 
-Context tags to use (OPTIONAL - only on the first line of each conversation):
+Condition tags to use (OPTIONAL - only on the first line of each conversation and can include multiple conditions):
 - (not-station) - Will not pick this conversation if you are currently at/around a station
 - (not-planet) - Will not pick this conversation if you are currently on or approaching a planet
 - (not-deep-space) - Will not pick this conversation if you are currently out in deep space (> 5000 ly from Sol and Colonia)
@@ -91,7 +78,7 @@ MEDIUM (3-4 lines):
 
 LONGER (5-6 lines):
 [example]
-[<Science>] (not-station) (not-planet) Did you know that Betelgeuse is expected to go supernova within the next 100,000 years?
+[<Science>] Did you know that Betelgeuse is expected to go supernova within the next 100,000 years?
 [<EDCoPilot>] That's correct, Commander. Betelgeuse is a red supergiant star in the constellation Orion.
 [<Operations>] When it does go supernova, it will be visible even during the day.
 [<Science>] The explosion will release elements like carbon, oxygen, and iron into space.
@@ -100,17 +87,20 @@ LONGER (5-6 lines):
 [/example]
 
 Generate conversations that are:
-- Focused on space exploration and astronomy
-- Educational and informative
+- Focused on ship crew interactions and operations
 - Include appropriate speaker tags and context tags
-- Engaging for space enthusiasts
-- Vary naturally in length (short conversations should be more common)
-- Each conversation wrapped in [example]...[/example] tags
-- Use the specified theme and style preferences
-- Follow the content guidelines and avoid topics that should be avoided
 - Ensure conversations feel natural and varied
 - Mix generic and personalized content appropriately
+- Each conversation wrapped in [example]...[/example] tags
 - Incorporate recent news and events naturally when relevant
+- Avoid conversations about present events that may or may not be true. (e.g. "The <station> docking bay is quite busy today.")
+- To talk about things that ship crew would talk about specific to their role use past tense like "Remember when we saw that black hole?"
+{{themes}}
+{{conversation_styles}}
 
-Format the output with each conversation wrapped in [example]...[/example] tags.
+Format: 
+[example]
+[<Speaker>] (context-tags) Message content
+[<Speaker>] (context-tags) Response content
+[/example]
 """
